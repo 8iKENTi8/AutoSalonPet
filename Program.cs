@@ -1,4 +1,4 @@
-using BlazorLab.Components;
+using AutoSalonPet.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
