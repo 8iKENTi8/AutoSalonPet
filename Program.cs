@@ -1,10 +1,13 @@
 using AutoSalonPet.Components;
+using AutoSalonPet.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddSingleton<CarCatalogService>();
 
 var app = builder.Build();
 
