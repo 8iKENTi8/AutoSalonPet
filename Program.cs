@@ -8,6 +8,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<CarCatalogService>();
+builder.Services.AddSingleton<SalesFeedService>();
+builder.Services.AddHostedService<SalesSimulatorService>();
 
 var app = builder.Build();
 
