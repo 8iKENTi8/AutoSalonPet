@@ -1,7 +1,54 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
 <PageTitle>Автосалон</PageTitle>
 
 <h1>Автосалон</h1>
 
-<p>Добро пожаловать.</p>
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <button type="button" class="nav-link @(activeTab == "cars" ? "active" : "")" @onclick="ShowCars">Машины</button>
+    </li>
+</ul>
+
+<div class="tab-content pt-3">
+    @if (activeTab == "cars")
+    {
+        <p class="text-muted">Машины в наличии</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Марка</th>
+                    <th>Модель</th>
+                    <th>Год</th>
+                    <th>Цена</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var car in cars)
+                {
+                    <tr>
+                        <td>@car.Brand</td>
+                        <td>@car.Model</td>
+                        <td>@car.Year</td>
+                        <td>@car.Price.ToString("N0") ₽</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private string activeTab = "cars";
+
+    private readonly List<Car> cars =
+    [
+        new() { Id = 1, Brand = "Toyota", Model = "Camry", Year = 2021, Price = 2_500_000 },
+        new() { Id = 2, Brand = "BMW", Model = "X5", Year = 2023, Price = 7_900_000 },
+        new() { Id = 3, Brand = "Lada", Model = "Vesta", Year = 2024, Price = 1_400_000 }
+    ];
+
+    private void ShowCars() => activeTab = "cars";
+}
