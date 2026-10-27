@@ -57,9 +57,18 @@
     }
     else if (activeTab == "sales")
     {
+        <ul class="nav nav-pills mb-3">
+            <li class="nav-item">
+                <button type="button" class="nav-link @(salesTab == "new" ? "active" : "")" @onclick="ShowNewSales">Новые</button>
+            </li>
+            <li class="nav-item">
+                <button type="button" class="nav-link @(salesTab == "used" ? "active" : "")" @onclick="ShowUsedSales">С пробегом</button>
+            </li>
+        </ul>
+
         <p class="text-muted">Новая продажа каждые 30 секунд</p>
 
-        @if (sales.Count == 0)
+        @if (VisibleSales.Count == 0)
         {
             <p>Пока продаж нет.</p>
         }
@@ -81,7 +90,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var sale in sales)
+                        @foreach (var sale in VisibleSales)
                         {
                             <tr>
                                 <td>@sale.SoldAt.ToString("HH:mm:ss")</td>
@@ -129,6 +138,7 @@
 
 @code {
     private string activeTab = "cars";
+    private string salesTab = "new";
     private Timer? timer;
     private int nextId = 1000;
     private decimal companyBalance = 20_000_000m;
@@ -159,7 +169,11 @@
         new() { Id = 20, Brand = "Skoda", Model = "Kodiaq", Year = 2022, HorsePower = 180, IsUsed = false, MileageKm = 0, Color = "Серебристый", Price = 3_800_000 }
     ];
 
-    private readonly List<SaleRecord> sales = [];
+    private readonly List<SaleRecord> newSales = [];
+
+    private readonly List<SaleRecord> usedSales = [];
+
+    private List<SaleRecord> VisibleSales => salesTab == "new" ? newSales : usedSales;
 
     private decimal StockValue => cars.Sum(car => car.Price);
 
@@ -208,23 +222,30 @@
 
     private void AddRandomSale()
     {
-        sales.Insert(0, new SaleRecord { Car = CreateRandomCar(), SoldAt = DateTime.Now });
+        AddSale(newSales, CreateRandomCar(isUsed: false));
+        AddSale(usedSales, CreateRandomCar(isUsed: true));
+
+        StateHasChanged();
+    }
+
+    private static void AddSale(List<SaleRecord> sales, Car car)
+    {
+        sales.Insert(0, new SaleRecord { Car = car, SoldAt = DateTime.Now });
 
         if (sales.Count > 20)
         {
             sales.RemoveAt(sales.Count - 1);
         }
-
-        StateHasChanged();
     }
 
-    private Car CreateRandomCar()
+    private Car CreateRandomCar(bool isUsed)
     {
         var model = carModels[random.Next(carModels.Length)];
         var currentYear = DateTime.Now.Year;
-        var year = random.Next(2018, currentYear + 1);
+        var year = isUsed
+            ? random.Next(2018, currentYear - 1)
+            : random.Next(currentYear - 1, currentYear + 1);
         var age = currentYear - year;
-        var isUsed = year < currentYear - 1 || random.Next(2) == 0;
 
         var price = model.BasePrice
             * (decimal)Math.Pow(0.88, age)
@@ -252,6 +273,10 @@
     private void ShowCars() => activeTab = "cars";
 
     private void ShowSales() => activeTab = "sales";
+
+    private void ShowNewSales() => salesTab = "new";
+
+    private void ShowUsedSales() => salesTab = "used";
 
     private void ShowFinance() => activeTab = "finance";
 
