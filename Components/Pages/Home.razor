@@ -13,6 +13,9 @@
     <li class="nav-item">
         <button type="button" class="nav-link @(activeTab == "sales" ? "active" : "")" @onclick="ShowSales">Лента продаж</button>
     </li>
+    <li class="nav-item">
+        <button type="button" class="nav-link @(activeTab == "finance" ? "active" : "")" @onclick="ShowFinance">Финансы</button>
+    </li>
 </ul>
 
 <div class="tab-content pt-3">
@@ -97,12 +100,38 @@
             </div>
         }
     }
+    else if (activeTab == "finance")
+    {
+        <p class="text-muted">Бюджет компании</p>
+
+        <table class="table">
+            <tbody>
+                <tr>
+                    <td>Машин в наличии</td>
+                    <td>@cars.Count</td>
+                </tr>
+                <tr>
+                    <td>Стоимость машин в наличии</td>
+                    <td>@StockValue.ToString("N0") ₽</td>
+                </tr>
+                <tr>
+                    <td>Баланс компании</td>
+                    <td>@companyBalance.ToString("N0") ₽</td>
+                </tr>
+                <tr class="fw-bold">
+                    <td>Общая сумма</td>
+                    <td>@TotalAssets.ToString("N0") ₽</td>
+                </tr>
+            </tbody>
+        </table>
+    }
 </div>
 
 @code {
     private string activeTab = "cars";
     private Timer? timer;
     private int nextId = 1000;
+    private decimal companyBalance = 20_000_000m;
 
     private readonly Random random = new();
 
@@ -131,6 +160,10 @@
     ];
 
     private readonly List<SaleRecord> sales = [];
+
+    private decimal StockValue => cars.Sum(car => car.Price);
+
+    private decimal TotalAssets => companyBalance + StockValue;
 
     private sealed record CarModel(string Brand, string Model, decimal BasePrice, int MinHorsePower, int MaxHorsePower);
 
@@ -219,6 +252,8 @@
     private void ShowCars() => activeTab = "cars";
 
     private void ShowSales() => activeTab = "sales";
+
+    private void ShowFinance() => activeTab = "finance";
 
     public void Dispose() => timer?.Dispose();
 }
