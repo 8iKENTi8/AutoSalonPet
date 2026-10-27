@@ -1,5 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Автосалон</PageTitle>
 
@@ -9,6 +10,9 @@
     <li class="nav-item">
         <button type="button" class="nav-link @(activeTab == "cars" ? "active" : "")" @onclick="ShowCars">Машины</button>
     </li>
+    <li class="nav-item">
+        <button type="button" class="nav-link @(activeTab == "sales" ? "active" : "")" @onclick="ShowSales">Лента продаж</button>
+    </li>
 </ul>
 
 <div class="tab-content pt-3">
@@ -16,56 +20,195 @@
     {
         <p class="text-muted">Машины в наличии</p>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Марка</th>
-                    <th>Модель</th>
-                    <th>Год</th>
-                    <th>Цена</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var car in cars)
-                {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@car.Brand</td>
-                        <td>@car.Model</td>
-                        <td>@car.Year</td>
-                        <td>@car.Price.ToString("N0") ₽</td>
+                        <th>Марка</th>
+                        <th>Модель</th>
+                        <th>Год</th>
+                        <th>Л.с.</th>
+                        <th>Пробег</th>
+                        <th>Состояние</th>
+                        <th>Цвет</th>
+                        <th>Цена</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var car in cars)
+                    {
+                        <tr>
+                            <td>@car.Brand</td>
+                            <td>@car.Model</td>
+                            <td>@car.Year</td>
+                            <td>@car.HorsePower</td>
+                            <td>@Mileage(car)</td>
+                            <td>@Condition(car)</td>
+                            <td>@car.Color</td>
+                            <td>@car.Price.ToString("N0") ₽</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (activeTab == "sales")
+    {
+        <p class="text-muted">Новая продажа каждые 30 секунд</p>
+
+        @if (sales.Count == 0)
+        {
+            <p>Пока продаж нет.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Марка</th>
+                            <th>Модель</th>
+                            <th>Год</th>
+                            <th>Л.с.</th>
+                            <th>Пробег</th>
+                            <th>Состояние</th>
+                            <th>Цвет</th>
+                            <th>Цена</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var sale in sales)
+                        {
+                            <tr>
+                                <td>@sale.SoldAt.ToString("HH:mm:ss")</td>
+                                <td>@sale.Car.Brand</td>
+                                <td>@sale.Car.Model</td>
+                                <td>@sale.Car.Year</td>
+                                <td>@sale.Car.HorsePower</td>
+                                <td>@Mileage(sale.Car)</td>
+                                <td>@Condition(sale.Car)</td>
+                                <td>@sale.Car.Color</td>
+                                <td>@sale.Car.Price.ToString("N0") ₽</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>
 
 @code {
     private string activeTab = "cars";
+    private Timer? timer;
+    private int nextId = 1000;
+
+    private readonly Random random = new();
 
     private readonly List<Car> cars =
     [
-        new() { Id = 1, Brand = "Audi", Model = "A3", Year = 2022, Price = 3_200_000 },
-        new() { Id = 2, Brand = "Audi", Model = "A4", Year = 2021, Price = 3_900_000 },
-        new() { Id = 3, Brand = "Audi", Model = "A6", Year = 2022, Price = 6_200_000 },
-        new() { Id = 4, Brand = "Audi", Model = "Q5", Year = 2021, Price = 5_400_000 },
-        new() { Id = 5, Brand = "Audi", Model = "Q7", Year = 2020, Price = 7_800_000 },
-        new() { Id = 6, Brand = "Audi", Model = "Q8", Year = 2023, Price = 11_500_000 },
-        new() { Id = 7, Brand = "Audi", Model = "e-tron", Year = 2022, Price = 6_900_000 },
-        new() { Id = 8, Brand = "Volkswagen", Model = "Polo", Year = 2021, Price = 1_450_000 },
-        new() { Id = 9, Brand = "Volkswagen", Model = "Golf", Year = 2021, Price = 2_300_000 },
-        new() { Id = 10, Brand = "Volkswagen", Model = "Passat", Year = 2020, Price = 2_800_000 },
-        new() { Id = 11, Brand = "Volkswagen", Model = "Tiguan", Year = 2022, Price = 3_600_000 },
-        new() { Id = 12, Brand = "Volkswagen", Model = "Touareg", Year = 2021, Price = 6_700_000 },
-        new() { Id = 13, Brand = "Volkswagen", Model = "Arteon", Year = 2021, Price = 3_900_000 },
-        new() { Id = 14, Brand = "Volkswagen", Model = "Teramont", Year = 2022, Price = 4_700_000 },
-        new() { Id = 15, Brand = "Skoda", Model = "Fabia", Year = 2020, Price = 1_200_000 },
-        new() { Id = 16, Brand = "Skoda", Model = "Rapid", Year = 2021, Price = 1_350_000 },
-        new() { Id = 17, Brand = "Skoda", Model = "Octavia", Year = 2022, Price = 2_600_000 },
-        new() { Id = 18, Brand = "Skoda", Model = "Superb", Year = 2021, Price = 3_300_000 },
-        new() { Id = 19, Brand = "Skoda", Model = "Karoq", Year = 2021, Price = 2_700_000 },
-        new() { Id = 20, Brand = "Skoda", Model = "Kodiaq", Year = 2022, Price = 3_800_000 }
+        new() { Id = 1, Brand = "Audi", Model = "A3", Year = 2022, HorsePower = 150, IsUsed = false, MileageKm = 0, Color = "Белый", Price = 3_200_000 },
+        new() { Id = 2, Brand = "Audi", Model = "A4", Year = 2021, HorsePower = 190, IsUsed = true, MileageKm = 48_000, Color = "Чёрный", Price = 3_900_000 },
+        new() { Id = 3, Brand = "Audi", Model = "A6", Year = 2022, HorsePower = 245, IsUsed = false, MileageKm = 0, Color = "Серый", Price = 6_200_000 },
+        new() { Id = 4, Brand = "Audi", Model = "Q5", Year = 2021, HorsePower = 249, IsUsed = true, MileageKm = 62_000, Color = "Синий", Price = 5_400_000 },
+        new() { Id = 5, Brand = "Audi", Model = "Q7", Year = 2020, HorsePower = 340, IsUsed = true, MileageKm = 85_000, Color = "Чёрный", Price = 7_800_000 },
+        new() { Id = 6, Brand = "Audi", Model = "Q8", Year = 2023, HorsePower = 340, IsUsed = false, MileageKm = 0, Color = "Белый", Price = 11_500_000 },
+        new() { Id = 7, Brand = "Audi", Model = "e-tron", Year = 2022, HorsePower = 313, IsUsed = true, MileageKm = 30_000, Color = "Серебристый", Price = 6_900_000 },
+        new() { Id = 8, Brand = "Volkswagen", Model = "Polo", Year = 2021, HorsePower = 110, IsUsed = true, MileageKm = 54_000, Color = "Белый", Price = 1_450_000 },
+        new() { Id = 9, Brand = "Volkswagen", Model = "Golf", Year = 2021, HorsePower = 150, IsUsed = true, MileageKm = 41_000, Color = "Серый", Price = 2_300_000 },
+        new() { Id = 10, Brand = "Volkswagen", Model = "Passat", Year = 2020, HorsePower = 190, IsUsed = true, MileageKm = 70_000, Color = "Чёрный", Price = 2_800_000 },
+        new() { Id = 11, Brand = "Volkswagen", Model = "Tiguan", Year = 2022, HorsePower = 180, IsUsed = false, MileageKm = 0, Color = "Синий", Price = 3_600_000 },
+        new() { Id = 12, Brand = "Volkswagen", Model = "Touareg", Year = 2021, HorsePower = 340, IsUsed = true, MileageKm = 58_000, Color = "Чёрный", Price = 6_700_000 },
+        new() { Id = 13, Brand = "Volkswagen", Model = "Arteon", Year = 2021, HorsePower = 280, IsUsed = true, MileageKm = 39_000, Color = "Красный", Price = 3_900_000 },
+        new() { Id = 14, Brand = "Volkswagen", Model = "Teramont", Year = 2022, HorsePower = 249, IsUsed = false, MileageKm = 0, Color = "Серебристый", Price = 4_700_000 },
+        new() { Id = 15, Brand = "Skoda", Model = "Fabia", Year = 2020, HorsePower = 110, IsUsed = true, MileageKm = 66_000, Color = "Белый", Price = 1_200_000 },
+        new() { Id = 16, Brand = "Skoda", Model = "Rapid", Year = 2021, HorsePower = 125, IsUsed = true, MileageKm = 59_000, Color = "Серый", Price = 1_350_000 },
+        new() { Id = 17, Brand = "Skoda", Model = "Octavia", Year = 2022, HorsePower = 150, IsUsed = false, MileageKm = 0, Color = "Синий", Price = 2_600_000 },
+        new() { Id = 18, Brand = "Skoda", Model = "Superb", Year = 2021, HorsePower = 190, IsUsed = true, MileageKm = 47_000, Color = "Чёрный", Price = 3_300_000 },
+        new() { Id = 19, Brand = "Skoda", Model = "Karoq", Year = 2021, HorsePower = 150, IsUsed = true, MileageKm = 38_000, Color = "Белый", Price = 2_700_000 },
+        new() { Id = 20, Brand = "Skoda", Model = "Kodiaq", Year = 2022, HorsePower = 180, IsUsed = false, MileageKm = 0, Color = "Серебристый", Price = 3_800_000 }
     ];
 
+    private readonly List<SaleRecord> sales = [];
+
+    private static readonly (string Brand, string Model)[] carModels =
+    [
+        ("Audi", "A3"), ("Audi", "A4"), ("Audi", "A6"), ("Audi", "Q5"),
+        ("Audi", "Q7"), ("Audi", "Q8"), ("Audi", "e-tron"),
+        ("Volkswagen", "Polo"), ("Volkswagen", "Golf"), ("Volkswagen", "Passat"),
+        ("Volkswagen", "Tiguan"), ("Volkswagen", "Touareg"), ("Volkswagen", "Arteon"),
+        ("Skoda", "Fabia"), ("Skoda", "Rapid"), ("Skoda", "Octavia"),
+        ("Skoda", "Superb"), ("Skoda", "Karoq"), ("Skoda", "Kodiaq")
+    ];
+
+    private static readonly string[] carColors =
+    [
+        "Белый", "Чёрный", "Серый", "Синий", "Красный", "Серебристый"
+    ];
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        timer = new Timer(_ => InvokeAsync(AddRandomSale), null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+    }
+
+    private void AddRandomSale()
+    {
+        sales.Insert(0, new SaleRecord { Car = CreateRandomCar(), SoldAt = DateTime.Now });
+
+        if (sales.Count > 20)
+        {
+            sales.RemoveAt(sales.Count - 1);
+        }
+
+        StateHasChanged();
+    }
+
+    private Car CreateRandomCar()
+    {
+        var (brand, model) = carModels[random.Next(carModels.Length)];
+        var isUsed = random.Next(2) == 0;
+
+        var horsePower = brand switch
+        {
+            "Audi" => random.Next(150, 451),
+            "Volkswagen" => random.Next(110, 341),
+            _ => random.Next(110, 281)
+        };
+
+        var price = brand switch
+        {
+            "Audi" => random.Next(3_000_000, 12_000_001),
+            "Volkswagen" => random.Next(1_500_000, 7_000_001),
+            _ => random.Next(1_200_000, 4_500_001)
+        };
+
+        return new Car
+        {
+            Id = nextId++,
+            Brand = brand,
+            Model = model,
+            Year = random.Next(2018, 2026),
+            HorsePower = horsePower,
+            IsUsed = isUsed,
+            MileageKm = isUsed ? random.Next(20_000, 180_001) : 0,
+            Color = carColors[random.Next(carColors.Length)],
+            Price = price
+        };
+    }
+
+    private static string Mileage(Car car) => car.IsUsed ? $"{car.MileageKm:N0} км" : "0 км";
+
+    private static string Condition(Car car) => car.IsUsed ? "С пробегом" : "Новая";
+
     private void ShowCars() => activeTab = "cars";
+
+    private void ShowSales() => activeTab = "sales";
+
+    public void Dispose() => timer?.Dispose();
 }
