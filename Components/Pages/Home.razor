@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject CarCatalogService CarCatalog
 @inject SalesFeedService SalesFeed
+@inject FinanceService Finance
 
 <PageTitle>Автосалон</PageTitle>
 
@@ -126,8 +127,16 @@
                     <td>@CarCatalog.StockValue.ToString("N0") ₽</td>
                 </tr>
                 <tr>
+                    <td>Продано машин</td>
+                    <td>@Finance.SoldCars</td>
+                </tr>
+                <tr>
+                    <td>Выручка с продаж</td>
+                    <td>@Finance.Revenue.ToString("N0") ₽</td>
+                </tr>
+                <tr>
                     <td>Баланс компании</td>
-                    <td>@companyBalance.ToString("N0") ₽</td>
+                    <td>@Finance.Balance.ToString("N0") ₽</td>
                 </tr>
                 <tr class="fw-bold">
                     <td>Общая сумма</td>
@@ -141,18 +150,18 @@
 @code {
     private string activeTab = "cars";
     private string salesTab = "new";
-    private decimal companyBalance = 20_000_000m;
 
     private IReadOnlyList<SaleRecord> VisibleSales => salesTab == "new" ? SalesFeed.GetNewSales() : SalesFeed.GetUsedSales();
 
-    private decimal TotalAssets => companyBalance + CarCatalog.StockValue;
+    private decimal TotalAssets => Finance.Balance + CarCatalog.StockValue;
 
     protected override void OnInitialized()
     {
-        SalesFeed.Changed += OnSalesFeedChanged;
+        SalesFeed.Changed += OnDataChanged;
+        Finance.Changed += OnDataChanged;
     }
 
-    private void OnSalesFeedChanged()
+    private void OnDataChanged()
     {
         _ = InvokeAsync(StateHasChanged);
     }
@@ -171,5 +180,9 @@
 
     private void ShowFinance() => activeTab = "finance";
 
-    public void Dispose() => SalesFeed.Changed -= OnSalesFeedChanged;
+    public void Dispose()
+    {
+        SalesFeed.Changed -= OnDataChanged;
+        Finance.Changed -= OnDataChanged;
+    }
 }

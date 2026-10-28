@@ -9,12 +9,14 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSingleton<CarCatalogService>();
 builder.Services.AddSingleton<SalesFeedService>();
+builder.Services.AddSingleton<FinanceService>();
 
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<KafkaSaleProducer>();
 
 builder.Services.AddHostedService<SalesSimulatorService>();
 builder.Services.AddHostedService<SaleFeedConsumer>();
+builder.Services.AddHostedService<FinanceConsumer>();
 
 var app = builder.Build();
 
