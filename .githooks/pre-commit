@@ -1,0 +1,3 @@
+#!/bin/sh
+dotnet format AutoSalonPet.csproj whitespace --verbosity quiet || exit 1
+git add -u
