@@ -27,12 +27,12 @@ public class SalesFeedService
         }
     }
 
-    public void Add(Car car)
+    public void Add(SaleRecord sale)
     {
         lock (gate)
         {
-            var sales = car.IsUsed ? usedSales : newSales;
-            sales.Insert(0, new SaleRecord { Car = car, SoldAt = DateTime.Now });
+            var sales = sale.Car.IsUsed ? usedSales : newSales;
+            sales.Insert(0, sale);
 
             if (sales.Count > MaxRecords)
             {

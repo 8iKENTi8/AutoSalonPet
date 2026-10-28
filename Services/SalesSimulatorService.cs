@@ -1,23 +1,24 @@
 using AutoSalonPet.Models;
+using Confluent.Kafka;
 
 namespace AutoSalonPet.Services;
 
 public class SalesSimulatorService : BackgroundService
 {
-    private readonly SalesFeedService _salesFeed;
+    private readonly KafkaSaleProducer _producer;
     private readonly ILogger<SalesSimulatorService> _logger;
     private readonly Random _random = new();
     private int _nextId = 1000;
 
-    public SalesSimulatorService(SalesFeedService salesFeed, ILogger<SalesSimulatorService> logger)
+    public SalesSimulatorService(KafkaSaleProducer producer, ILogger<SalesSimulatorService> logger)
     {
-        _salesFeed = salesFeed;
+        _producer = producer;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        AddRandomSales();
+        await AddRandomSalesAsync(stoppingToken);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
 
@@ -25,7 +26,7 @@ public class SalesSimulatorService : BackgroundService
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                AddRandomSales();
+                await AddRandomSalesAsync(stoppingToken);
             }
         }
         catch (OperationCanceledException)
@@ -33,15 +34,24 @@ public class SalesSimulatorService : BackgroundService
         }
     }
 
-    private void AddRandomSales()
+    private async Task AddRandomSalesAsync(CancellationToken cancellationToken)
     {
-        var newCar = CreateRandomCar(isUsed: false);
-        _salesFeed.Add(newCar);
-        _logger.LogInformation("Продажа новой машины: {Brand} {Model}, {Year}, {Price:N0} ₽", newCar.Brand, newCar.Model, newCar.Year, newCar.Price);
+        await PublishSaleAsync(CreateRandomCar(isUsed: false), cancellationToken);
+        await PublishSaleAsync(CreateRandomCar(isUsed: true), cancellationToken);
+    }
 
-        var usedCar = CreateRandomCar(isUsed: true);
-        _salesFeed.Add(usedCar);
-        _logger.LogInformation("Продажа машины с пробегом: {Brand} {Model}, {Year}, {Mileage:N0} км, {Price:N0} ₽", usedCar.Brand, usedCar.Model, usedCar.Year, usedCar.MileageKm, usedCar.Price);
+    private async Task PublishSaleAsync(Car car, CancellationToken cancellationToken)
+    {
+        var sale = new SaleRecord { Car = car, SoldAt = DateTime.Now };
+
+        try
+        {
+            await _producer.PublishAsync(sale, cancellationToken);
+        }
+        catch (KafkaException ex)
+        {
+            _logger.LogWarning("Не удалось отправить продажу в Kafka: {Message}", ex.Message);
+        }
     }
 
     private Car CreateRandomCar(bool isUsed)
