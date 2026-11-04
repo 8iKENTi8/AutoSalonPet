@@ -13,9 +13,11 @@ builder.Services.AddSingleton<FinanceService>();
 
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<KafkaSaleProducer>();
+builder.Services.AddSingleton<DeadLetterPublisher>();
 
 builder.Services.AddHostedService<SalesSimulatorService>();
 builder.Services.AddHostedService<SaleFeedConsumer>();
+builder.Services.AddHostedService<SaleRetryConsumer>();
 builder.Services.AddHostedService<FinanceConsumer>();
 
 var app = builder.Build();
